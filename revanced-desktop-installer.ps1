@@ -27,14 +27,14 @@ function Test-RequiredModule()
 		return
 	}
 
-	Write-Host "The module " -NoNewline
-	Write-Host "$Module" -ForegroundColor Green -NoNewline 
-	Write-Host " does not exist!"
-	Write-Host "This is needed for the script to run. Do you want to install it?"
-	Write-Host "Type " -NoNewline
-	Write-Host "Y " -ForegroundColor Yellow -NoNewline
-	Write-Host "or " -NoNewline
-	Write-Host "N" -ForegroundColor Yellow -NoNewline
+    Write-Host "The module " -NoNewline
+    Write-Host "$Module" -ForegroundColor Green -NoNewline 
+    Write-Host " does not exist!"
+    Write-Host "This is needed for the script to run. Do you want to install it?"
+    Write-Host "Type " -NoNewline
+    Write-Host "Y " -ForegroundColor Yellow -NoNewline
+    Write-Host "or " -NoNewline
+    Write-Host "N" -ForegroundColor Yellow -NoNewline
     Write-Host ", then press " -NoNewline
     Write-Host "ENTER" -ForegroundColor Cyan -NoNewline
     Write-Host ": " -NoNewline
