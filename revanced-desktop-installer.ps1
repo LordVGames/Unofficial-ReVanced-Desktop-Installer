@@ -26,7 +26,7 @@ function Test-RequiredModule()
 	{
 		return
 	}
-
+    
     Write-Host "The module " -NoNewline
     Write-Host "$Module" -ForegroundColor Green -NoNewline 
     Write-Host " does not exist!"
