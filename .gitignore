@@ -1,0 +1,10 @@
+*.apk
+*.exe
+*.dll
+*.conf
+*.code-workspace
+*.jar
+
+options.json
+options.toml
+patches.json
