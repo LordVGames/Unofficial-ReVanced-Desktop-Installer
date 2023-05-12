@@ -19,7 +19,9 @@ This does not install anything to your PC aside from ReVanced files necessary fo
 
 ## Dependencies
 
-The script is only dependent on 1 module, that being [PSWriteColor](https://www.powershellgallery.com/packages/PSWriteColor). If it hasn't already been installed, the script will ask if it's OK to install it for you.
+The script is dependent on only 1 PowerShell module, that being [PSWriteColor](https://www.powershellgallery.com/packages/PSWriteColor). If it hasn't already been installed, the script will ask if it's OK to install it for you.
+
+You'll also need to have `adb.exe` in the same folder as the script files.
 
 ## Usage
 
