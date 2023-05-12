@@ -21,12 +21,12 @@ function Exit-WithMessageAndPause()
 
 function Test-RequiredModule()
 {
-	$Module = "PSWriteColor"
-	if (Get-Module -ListAvailable -Name $Module)
-	{
-		return
-	}
-    
+    $Module = "PSWriteColor"
+    if (Get-Module -ListAvailable -Name $Module)
+    {
+        return
+    }
+
     Write-Host "The module " -NoNewline
     Write-Host "$Module" -ForegroundColor Green -NoNewline 
     Write-Host " does not exist!"
@@ -38,30 +38,29 @@ function Test-RequiredModule()
     Write-Host ", then press " -NoNewline
     Write-Host "ENTER" -ForegroundColor Cyan -NoNewline
     Write-Host ": " -NoNewline
-	$Prompt = Read-Host
-	if ($Prompt -ne "y")
-	{
-		Exit-WithMessageAndPause
-	}
-
-	$OldErrorActionPreference = $ErrorActionPreference
-	Install-Module $Module -Scope CurrentUser
-	if (!$?)
-	{
-		Write-Host "An error occurred! " -ForegroundColor Red -NoNewline
-		Write-Host " You may need to run PowerShell in administrator mode to install the module ""$Module""."
-		pause
-		exit
-	}
-	else
-	{
-		Write-Host "Done! Module """ -NoNewline
-		Write-Host "$Module" -ForegroundColor Green -NoNewline
-		Write-Host """ should have been installed for the current user!"
-		pause
-	}
-	$ErrorActionPreference = $OldErrorActionPreference
-	Clear-Host
+    $Prompt = Read-Host
+    if ($Prompt -ne "y")
+    {
+        Exit-WithMessageAndPause
+    }
+    $OldErrorActionPreference = $ErrorActionPreference
+    Install-Module $Module -Scope CurrentUser
+    if (!$?)
+    {
+        Write-Host "An error occurred! " -ForegroundColor Red -NoNewline
+        Write-Host " You may need to run PowerShell in administrator mode to install the module ""$Module""."
+        pause
+        exit
+    }
+    else
+    {
+        Write-Host "Done! Module """ -NoNewline
+        Write-Host "$Module" -ForegroundColor Green -NoNewline
+        Write-Host """ should have been installed for the current user!"
+        pause
+    }
+    $ErrorActionPreference = $OldErrorActionPreference
+    Clear-Host
 }
 
 function Read-DeviceNamesForIdsFromConf()
