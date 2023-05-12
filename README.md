@@ -6,7 +6,7 @@ This does not install anything to your PC aside from ReVanced files necessary fo
 
 ## Features
 
-- Will download the latest versions of the following each time the script is ran:
+- Will download the latest release versions of the following each time the script is ran:
   - [ReVanced Patches](https://github.com/revanced/revanced-patches)
   - [ReVanced Integrations](https://github.com/revanced/revanced-integrations)
   - [ReVanced Manager](https://github.com/revanced/revanced-manager)
