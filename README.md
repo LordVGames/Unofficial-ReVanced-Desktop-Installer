@@ -6,7 +6,7 @@ This does not install anything to your PC aside from ReVanced files necessary fo
 
 ## Features
 
-- Will download the latest versions of the following each time the script is ran:
+- Will download the latest release versions of the following each time the script is ran:
   - [ReVanced Patches](https://github.com/revanced/revanced-patches)
   - [ReVanced Integrations](https://github.com/revanced/revanced-integrations)
   - [ReVanced Manager](https://github.com/revanced/revanced-manager)
@@ -16,10 +16,13 @@ This does not install anything to your PC aside from ReVanced files necessary fo
   - YouTube
   - YouTube Music
   - Citra
+- Will notify you if the version of the app you're patching isn't the version that supports extra patches, if any.
 
 ## Dependencies
 
-The script is only dependent on 1 module, that being [PSWriteColor](https://www.powershellgallery.com/packages/PSWriteColor). If it hasn't already been installed, the script will ask if it's OK to install it for you.
+The script is dependent on only 1 PowerShell module, that being [PSWriteColor](https://www.powershellgallery.com/packages/PSWriteColor). If it hasn't already been installed, the script will ask if it's OK to install it for you.
+
+You'll also need to have `adb.exe` in the same folder as the script files.
 
 ## Usage
 
