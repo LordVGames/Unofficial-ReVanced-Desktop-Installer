@@ -89,6 +89,10 @@ function Get-AppApkFileName([string]$AppName)
         {
             $FileList = Get-ChildItem -File -Name -Filter "*youtube*music*apk*"
         }
+        "Reddit"
+        {
+            $FileList = Get-ChildItem -File -Name -Filter "*reddit*frontpage*"
+        }
         "Citra"
         {
             $FileList = Get-ChildItem -File -Name -Filter "*citra*"
@@ -123,7 +127,8 @@ function Get-NameOfAppToPatchFromUser()
     Write-Color "0"," - ","ReVanced Manager" Cyan,$DefaultTextColor,Cyan
     Write-Color "1"," - ","YouTube" Cyan,$DefaultTextColor,Cyan
     Write-Color "2"," - ","YouTube Music" Cyan,$DefaultTextColor,Cyan
-    Write-Color "3"," - ","Citra" Cyan,$DefaultTextColor,Cyan
+    Write-Color "3"," - ","Reddit" Cyan,$DefaultTextColor,Cyan
+    Write-Color "4"," - ","Citra" Cyan,$DefaultTextColor,Cyan
     Write-Color "Type in the ","number ","of your choice, then press ","ENTER",": " $DefaultTextColor,Yellow,$DefaultTextColor,Cyan,$DefaultTextColor
     $ChosenApp = Read-Host
     switch ($ChosenApp)
@@ -143,7 +148,12 @@ function Get-NameOfAppToPatchFromUser()
             Write-Host ''
             return "YouTube Music"
         }
-        2
+        3
+        {
+            Write-Host ''
+            return "Reddit"
+        }
+        4
         {
             Write-Host ''
             return "Citra"
@@ -166,6 +176,10 @@ function Get-TargetVersionForAppPatches([string]$AppName)
         "YouTube Music"
         {
             $AppInternalName = "com.google.android.apps.youtube.music"
+        }
+        "Reddit"
+        {
+            $AppInternalName = "com.reddit.frontpage"
         }
         "Citra"
         {
@@ -503,7 +517,7 @@ function Get-AdbDeviceIds()
 
 function Assert-NoAdbDeviceIds()
 {
-    Write-Color "ERROR: ","No devices were found connected to the computer! Devices must be connected to this PC to have ReVanced be installed/updated via this script." Red,$DefaultTextColor
+    Write-Color "ERROR: ","No devices were found connected to the computer! Devices must be connected to this PC to have ReVanced apps be installed/updated via this script." Red,$DefaultTextColor
     Write-Color "Press ","ENTER ","when you have ","connected your device(s) ","to this PC." $DefaultTextColor,Cyan,$DefaultTextColor,Yellow,$DefaultTextColor -NoNewLine
     Read-Host
 
@@ -585,6 +599,7 @@ if (!$IsDotSourced)
     if ($DeviceList.Count -eq 0)
     {
         Assert-NoAdbDeviceIds
+        $DeviceList = Get-AdbDeviceIds
     }
     switch ($DeviceList.Count)
     {
