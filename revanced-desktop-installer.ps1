@@ -19,9 +19,8 @@ function Exit-WithMessageAndPause()
     exit
 }
 
-function Test-RequiredModule()
+function Test-RequiredModule([string]$Module)
 {
-    $Module = "PSWriteColor"
     if (Get-Module -ListAvailable -Name $Module)
     {
         return
@@ -63,17 +62,16 @@ function Test-RequiredModule()
     Clear-Host
 }
 
-function Read-DeviceNamesForIdsFromConf()
+function Read-DeviceNamesForIdsFromConfig()
 {
     $FileName = $PSCommandPath.Split("\")[-1]
     $FileNameNoext = $FileName.SubString(0, $FileName.Length - 4)
 	foreach ($Line in (Get-Content "$FileNameNoExt-device-names.conf"))
 	{
 		$LineSplit = $Line.Split("=")
-		$DeviceId = $LineSplit[0]
+		$DeviceSerial = $LineSplit[0]
 		$DeviceName = $LineSplit[1]
-		Set-Variable "DeviceNameForId-$DeviceId" $DeviceName -Scope Global
-		#Write-Host "The config name for device ID $DeviceId is $DeviceName"
+		Set-Variable "DeviceNameForId-$DeviceSerial" $DeviceName -Scope Global
 	}
 }
 
@@ -81,6 +79,10 @@ function Get-AppApkFileName([string]$AppName)
 {
     switch ($AppName)
     {
+        "revanced-manager"
+        {
+            $FileList = Get-ChildItem -File -Name -Filter "revanced-manager*"
+        }
         "YouTube"
         {
             $FileList = Get-ChildItem -File -Name -Filter "*youtube*apk*" -Exclude "*music*"
@@ -92,14 +94,6 @@ function Get-AppApkFileName([string]$AppName)
         "Reddit"
         {
             $FileList = Get-ChildItem -File -Name -Filter "*reddit*frontpage*"
-        }
-        "Citra"
-        {
-            $FileList = Get-ChildItem -File -Name -Filter "*citra*"
-        }
-        "revanced-manager"
-        {
-            $FileList = Get-ChildItem -File -Name -Filter "revanced-manager*"
         }
     }
     if ($FileList.Count -gt 1)
@@ -128,7 +122,6 @@ function Get-NameOfAppToPatchFromUser()
     Write-Color "1"," - ","YouTube" Cyan,$DefaultTextColor,Cyan
     Write-Color "2"," - ","YouTube Music" Cyan,$DefaultTextColor,Cyan
     Write-Color "3"," - ","Reddit" Cyan,$DefaultTextColor,Cyan
-    Write-Color "4"," - ","Citra" Cyan,$DefaultTextColor,Cyan
     Write-Color "Type in the ","number ","of your choice, then press ","ENTER",": " $DefaultTextColor,Yellow,$DefaultTextColor,Cyan,$DefaultTextColor
     $ChosenApp = Read-Host
     switch ($ChosenApp)
@@ -153,11 +146,6 @@ function Get-NameOfAppToPatchFromUser()
             Write-Host ''
             return "Reddit"
         }
-        4
-        {
-            Write-Host ''
-            return "Citra"
-        }
         default
         {
             return Get-NameOfAppToPatchFromUser
@@ -180,10 +168,6 @@ function Get-TargetVersionForAppPatches([string]$AppName)
         "Reddit"
         {
             $AppInternalName = "com.reddit.frontpage"
-        }
-        "Citra"
-        {
-            $AppInternalName = "org.citra.citra_emu"
         }
         default
         {
@@ -343,12 +327,18 @@ function Install-ReVancedPartFilesFromInfo([string]$PartName, [PSCustomObject]$P
 
     foreach ($FileInfo in $PartInfo.assets)
     {
-        $File = $FileInfo.browser_download_url.Split("/")[-1]
-        Write-Color "Downloading ",$File,"..." $DefaultTextColor,Green,$DefaultTextColor
-        if (Test-Path "./$File")
+        $NeededFileExtensions = @("apk","jar","json")
+        $FileName = $FileInfo.browser_download_url.Split("/")[-1]
+        $FileExtension = $FileName.Split(".")[-1]
+        if ($FileExtension -inotin $NeededFileExtensions)
         {
-            Write-Color "WARNING: ","The file ","$File ","already exists and will be removed before being re-downloaded." Yellow,$DefaultTextColor,Green,$DefaultTextColor
-            Remove-Item "./$File"
+            continue
+        }
+        Write-Color "Downloading ",$FileName,"..." $DefaultTextColor,Green,$DefaultTextColor
+        if (Test-Path "./$FileName")
+        {
+            Write-Color "WARNING: ","The file ","$FileName ","already exists and will be removed before being re-downloaded." Yellow,$DefaultTextColor,Green,$DefaultTextColor
+            Remove-Item "./$FileName"
         }
         Invoke-WebRequest $FileInfo.browser_download_url -OutFile $FileInfo.browser_download_url.Split("/")[-1]
     }
@@ -391,7 +381,7 @@ function Install-LatestReVancedPartFiles([string]$PartName)
                 }
                 2
                 {
-                    Write-Color "New version ","$PartLatestVersion ","is available!" $DefaultTextColor,Green,$DefaultTextColor
+                    Write-Color "The new version ","$PartLatestVersion ","is available!" $DefaultTextColor,Green,$DefaultTextColor
                     Write-Color "WARNING: ","The file ",$File," is an older version and will be removed." Yellow,$DefaultTextColor,Yellow,$DefaultTextColor
                     Remove-Item $File
                 }
@@ -434,11 +424,11 @@ function Confirm-TargetedApkVersion([string]$FileVersion, [string]$TargetVersion
     }
 }
 
-function Install-ReVancedAppToDeviceId([string]$AppName, [string]$DeviceId)
+function Install-ReVancedAppToDeviceSerial([string]$AppName, [string]$DeviceSerial)
 {
-    if (!((Get-AdbDeviceIds).Contains($DeviceId)))
+    if (!((Get-AdbDeviceSerials).Contains($DeviceSerial)))
     {
-        Write-Color "ERROR! ","The device ID ",$DeviceId," is not connected to this PC!" Red,$DefaultTextColor,Yellow,$DefaultTextColor
+        Write-Color "ERROR! ","The device ID ",$DeviceSerial," is not connected to this PC!" Red,$DefaultTextColor,Yellow,$DefaultTextColor
         Exit-WithMessageAndPause
     }
     
@@ -446,43 +436,56 @@ function Install-ReVancedAppToDeviceId([string]$AppName, [string]$DeviceId)
     $ReVancedPatchesFileName = Get-ChildItem -File -Name -Filter "*revanced-patches*"
     $ReVancedIntegrationsFileName = Get-ChildItem -File -Name -Filter "*revanced-integrations*"
     $ChosenApkFileName = Get-AppApkFileName $AppName
-    $ChosenApkFileNameNoExt = $ChosenApkFileName.SubString(0, $ChosenApkFileName.Length - 4)
     
     if ($AppName -eq "revanced-manager")
     {
         Write-Host ''
-        ./adb -s $DeviceId install -r $ChosenApkFileName
+        ./adb -s $DeviceSerial install -r $ChosenApkFileName
         return
     }
 
     Confirm-TargetedApkVersion (Get-VersionFromFileName $ChosenApkFileName) (Get-TargetVersionForAppPatches $AppName)
-    $ExcludedPatches = (Get-ExcludedReVancedPatchesFromUser).Split(" ")
+    $SpecificPatches = (Get-SpecificReVancedPatchesFromUser).Split(",")
+    
     Write-Host ''
-
     $ArgumentList = @(
         "-jar $ReVancedCliFileName",
-        "-c",
-        "-b $ReVancedPatchesFileName",
-        "-m $ReVancedIntegrationsFileName",
-        "-a $ChosenApkFileName",
-        "-o ${ChosenApkFileNameNoExt}_PATCHED.apk",
-        "-d $DeviceId"
+        "patch",
+        "--patch-bundle $ReVancedPatchesFileName",
+        "--merge $ReVancedIntegrationsFileName",
+        "--purge",
+        "--device-serial $DeviceSerial",
+        "$ChosenApkFileName"
     )
-    if ($ExcludedPatches)
+    foreach ($Patch in $SpecificPatches)
     {
-        foreach ($Patch in $ExcludedPatches)
+        if ($Patch[0] -eq "-")
         {
-            $ArgumentList += "-e $Patch"
+            $ArgumentList += "--exclude ""$Patch"""
+        }
+        else
+        {
+            $ArgumentList += "--include ""$Patch"""
         }
     }
     Start-Process "java" -NoNewWindow -Wait -ArgumentList $ArgumentList
+
+    # Purging the resource cache directory is currently bugged and the ReVanced CLI doesn't remove it
+    # So we gotta do it ourselves
+    $ReVancedTemporaryFilesFolder = Get-ChildItem -Directory -Name "*-patched-temporary-files*"
+    if ($ReVancedTemporaryFilesFolder)
+    {
+        Remove-item -Recurse $ReVancedTemporaryFilesFolder
+    }
 }
 
-function Get-ExcludedReVancedPatchesFromUser()
+function Get-SpecificReVancedPatchesFromUser()
 {
-    Write-Color "Do you want to ","exclude ","any patches from the list of patches for your chosen app?" $DefaultTextColor,Yellow,$DefaultTextColor
-    Write-Host "If so, list them all here, each separated by a space."
-    Write-Host "Otherwise, press ENTER to not exclude any patches manually."
+    Write-Color "Do you want to ","include ","or ","exclude ","any patches from the list of patches for your chosen app?" $DefaultTextColor,Yellow,$DefaultTextColor,Yellow,$DefaultTextColor
+    Write-Host "If so, list them all here, each separated by a comma."
+    Write-Host "Put a dash in front of a patch you want to exclude."
+    Write-Color "For example: GmsCore support,-Custom branding" $DefaultTextColor,Green
+    Write-Host "Leave this blank and press ENTER to not include nor exclude any patches manually."
     return Read-Host
 }
 
@@ -498,7 +501,7 @@ function Uninstall-ReVancedLeftovers()
 
 
 #region ADB functions
-function Get-AdbDeviceIds()
+function Get-AdbDeviceSerials()
 {
     ./adb shell exit | Out-Null
     $AdbDevicesOutput = ./adb devices
@@ -515,24 +518,24 @@ function Get-AdbDeviceIds()
     return $AdbDevicesList
 }
 
-function Assert-NoAdbDeviceIds()
+function Assert-NoAdbDeviceSerials()
 {
     Write-Color "ERROR: ","No devices were found connected to the computer! Devices must be connected to this PC to have ReVanced apps be installed/updated via this script." Red,$DefaultTextColor
     Write-Color "Press ","ENTER ","when you have ","connected your device(s) ","to this PC." $DefaultTextColor,Cyan,$DefaultTextColor,Yellow,$DefaultTextColor -NoNewLine
     Read-Host
 
-    $DeviceList = Get-AdbDeviceIds
+    $DeviceList = Get-AdbDeviceSerials
     if ($DeviceList.Count -eq 0)
     {
-        Assert-NoAdbDeviceIds
+        Assert-NoAdbDeviceSerials
         return
     }
 }
 
-function Confirm-SingleAdbDeviceToInstallTo([string]$DeviceId)
+function Confirm-SingleAdbDeviceToInstallTo([string]$DeviceSerial)
 {
-    $DeviceName = Get-Variable "DeviceNameForId-$DeviceId" -ValueOnly
-    Write-Color "Only one device was detected.`nThe device ID is ",$DeviceId $DefaultTextColor,Cyan -NoNewLine
+    $DeviceName = Get-Variable "DeviceNameForId-$DeviceSerial" -ValueOnly
+    Write-Color "Only one device was detected.`nThe device ID is ",$DeviceSerial $DefaultTextColor,Cyan -NoNewLine
     if ($DeviceName)
     {
         Write-Color ", and the name is ",$DeviceName,"." $DefaultTextColor,Cyan,$DefaultTextColor
@@ -541,7 +544,7 @@ function Confirm-SingleAdbDeviceToInstallTo([string]$DeviceId)
     {
         Write-Host "."
     }
-    Write-Host "Do you want to install/update ReVanced on this device?"
+    Write-Host "Do you want to install/update a ReVanced app on this device?"
     Write-Color "Type ","Y ","or ","N",", then press ","ENTER",": " $DefaultTextColor,Yellow,$DefaultTextColor,Yellow,$DefaultTextColor,Cyan -NoNewLine
     switch (Read-Host)
     {
@@ -551,7 +554,7 @@ function Confirm-SingleAdbDeviceToInstallTo([string]$DeviceId)
         }
         ($_ -notin "y")
         {
-            Confirm-SingleAdbDeviceToInstallTo $DeviceId
+            Confirm-SingleAdbDeviceToInstallTo $DeviceSerial
             return
         }
     }
@@ -560,14 +563,13 @@ function Confirm-SingleAdbDeviceToInstallTo([string]$DeviceId)
 function Get-AdbDeviceToInstallToFromList()
 {
     Write-Host "The following devices were found:"
-    $DeviceIds = Get-AdbDeviceIds
-    # FOR TESTING $DeviceIds = @("ZYGFGDDPXT", "ZY2FSFSDFF", "ZSFFSFSDFF")
+    $DeviceSerials = Get-AdbDeviceSerials
     $DeviceNum = 1
-    foreach ($DeviceId in $DeviceIds)
+    foreach ($DeviceSerial in $DeviceSerials)
     {
-        $DeviceName = Get-Variable "DeviceNameForId-$DeviceId" -ValueOnly
+        $DeviceName = Get-Variable "DeviceNameForId-$DeviceSerial" -ValueOnly
 
-        Write-Color $DeviceNum," - ",$DeviceId Cyan,$DefaultTextColor,Cyan -NoNewline
+        Write-Color $DeviceNum," - ",$DeviceSerial Cyan,$DefaultTextColor,Cyan -NoNewline
         if ($DeviceName)
         {
             Write-Color " - ",$DeviceName $DefaultTextColor,Cyan -NoNewLine
@@ -577,7 +579,7 @@ function Get-AdbDeviceToInstallToFromList()
     }
     Write-Color "Type in the ","number ","for the device you'd like to install/update ReVanced on, then press ","ENTER",": " $DefaultTextColor,Yellow,$DefaultTextColor,Cyan,$DefaultTextColor -NoNewLine
     $ChosenNum = Read-Host
-    return $DeviceIds[$ChosenNum - 1]
+    return $DeviceSerials[$ChosenNum - 1]
 }
 #endregion
 
@@ -586,8 +588,8 @@ function Get-AdbDeviceToInstallToFromList()
 if (!$IsDotSourced)
 {
     Set-Title "Unofficial ReVanced Desktop Installer"
-    Test-RequiredModule
-    Read-DeviceNamesForIdsFromConf
+    Test-RequiredModule "PSWriteColor"
+    Read-DeviceNamesForIdsFromConfig
 
     Install-LatestReVancedPartFiles "revanced-patches"
     Install-LatestReVancedPartFiles "revanced-integrations"
@@ -595,26 +597,26 @@ if (!$IsDotSourced)
     Install-LatestReVancedPartFiles "revanced-cli"
     Write-Host ''
 
-    $DeviceList = Get-AdbDeviceIds
+    $DeviceList = Get-AdbDeviceSerials
     if ($DeviceList.Count -eq 0)
     {
-        Assert-NoAdbDeviceIds
-        $DeviceList = Get-AdbDeviceIds
+        Assert-NoAdbDeviceSerials
+        $DeviceList = Get-AdbDeviceSerials
     }
     switch ($DeviceList.Count)
     {
         1
         {
-            $DeviceId = $DeviceList
-            Confirm-SingleAdbDeviceToInstallTo $DeviceId
+            $DeviceSerial = $DeviceList
+            Confirm-SingleAdbDeviceToInstallTo $DeviceSerial
         }
         ($_ -in 2..99)
         {
-            $DeviceId = Get-AdbDeviceToInstallToFromList
+            $DeviceSerial = Get-AdbDeviceToInstallToFromList
         }
     }
     Write-Host ''
-    Install-ReVancedAppToDeviceId (Get-NameOfAppToPatchFromUser) $DeviceId
+    Install-ReVancedAppToDeviceSerial (Get-NameOfAppToPatchFromUser) $DeviceSerial
     Uninstall-ReVancedLeftovers
 
     Write-Host "Thank you for using the unofficial ReVanced desktop installer!" -ForegroundColor Green
