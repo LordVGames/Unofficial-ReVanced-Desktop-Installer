@@ -16,7 +16,6 @@ This does not install anything to your PC aside from ReVanced files necessary fo
   - YouTube
   - YouTube Music
   - Reddit
-  - Citra
 - Will notify you if the version of the app you're patching isn't the version that supports extra patches, if any.
 
 ## Dependencies
